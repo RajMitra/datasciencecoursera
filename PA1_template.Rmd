@@ -1,0 +1,88 @@
+---
+title: "PA1_template"
+output: html_document
+---
+
+Reading the file
+
+```{r}
+steps <- read.csv("activity.csv")
+stepsmod <- steps[complete.cases(steps),]
+```
+
+Calculating the total number of steps per day
+
+```{r}
+library(dplyr)
+stepstotal <- stepsmod %>% group_by(date) %>% summarise_each(funs(sum))
+stepstotal
+```
+
+Histogram of total number of steps per day
+
+```{r}
+hist(stepstotal$steps, main = "Histogram of total number of steps", xlab="No of steps", ylab = "Frequency")
+```
+
+Mean and median for the total number of steps per day
+
+```{r}
+stepsmean <- stepsmod %>% group_by(date) %>% summarise_each(funs(mean))
+stepsmean
+
+stepsmedian <- stepsmod %>% group_by(date) %>% summarise_each(funs(median))
+stepsmedian
+```
+5-minute inetrval plot
+
+```{r}
+stepsmean2 <- stepsmod %>% group_by(interval) %>% summarise_each(funs(mean))
+plot(stepsmean2$interval,stepsmean2$steps,type = "l", xlab = "5-minute interval", ylab = "Average number of steps taken")
+```
+
+
+Calculating the number of NAs
+
+```{r computena}
+na <- sum(is.na(steps$steps))
+```
+
+Total number of rows with NAs is `r na`
+
+Replacing NAs with mean
+
+```{r}
+steps[is.na(steps)] <- mean(stepsmod$steps)
+```
+
+Creating histogram and calculating mean and median for the new dataset
+
+```{r}
+stepstotal2 <- steps %>% group_by(date) %>% summarise_each(funs(sum))
+
+hist(stepstotal2$steps, main = "Histogram of total number of steps", xlab="No of steps", ylab = "Frequency")
+
+stepsmean2 <- steps %>% group_by(date) %>% summarise_each(funs(mean))
+stepsmean2
+
+stepsmedian2 <- steps %>% group_by(date) %>% summarise_each(funs(median))
+stepsmedian2
+```
+
+Adding weekdays and weekends
+
+```{r}
+library(lubridate)
+stepsdays <- mutate(steps,daytype = ifelse(wday(steps$date) == (1 | 7),"Weekend","weekday"))
+stepsdays$daytype <- factor(stepsdays$daytype)
+```
+
+Plotting by weekdays and weekends
+
+```{r}
+stepsdaysmean <- stepsdays %>% group_by(interval,daytype) %>% summarise_each(funs(mean))
+
+par(mfrow = c(2,1), mar = c(4, 4, 2, 1))
+with(subset(stepsdaysmean, daytype == "weekday"), plot(stepsdaysmean$interval,stepsdaysmean$steps, type = "l", main = "Weekday", xlab = "5-minute Interval", ylab = "Average number of steps"))
+with(subset(stepsdaysmean, daytype == "weekend"), plot(stepsdaysmean$interval,stepsdaysmean$steps, type = "l", main = "Weekend", xlab = "5-minute Interval", ylab = "Average number of steps"))
+```
